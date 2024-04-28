@@ -1,2 +1,0 @@
-include ':app'
-rootProject.name = "Robot_v3"
