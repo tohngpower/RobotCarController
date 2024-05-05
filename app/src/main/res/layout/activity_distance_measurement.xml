@@ -1,260 +1,160 @@
-package com.personal.robot_v4
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:ignore="ButtonStyle"
+    tools:context=".DistanceMeasurement">
 
-import android.annotation.SuppressLint
-import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
-import java.io.DataInputStream
-import java.io.DataOutputStream
-import java.io.IOException
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_gravity="center_horizontal">
 
-class DistanceMeasurement : AppCompatActivity() {
-    private lateinit var button5: Button
-    private lateinit var button10: Button
-    private lateinit var button20: Button
-    private lateinit var buttonN5: Button
-    private lateinit var buttonN10: Button
-    private lateinit var buttonN20: Button
-    private lateinit var buttonExit: Button
-    private lateinit var buttonConnect: Button
-    private lateinit var buttonL: Button
-    private lateinit var buttonR: Button
-    private lateinit var textView: TextView
-    private lateinit var statusText: TextView
-    private lateinit var dos: DataOutputStream
-    private lateinit var dis: DataInputStream
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:layout_gravity="center">
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_distance_measurement)
+            <TextView
+                android:id="@+id/textView7"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/distance"
+                android:textAppearance="@style/TextAppearance.AppCompat.Large" />
 
-        button5 = findViewById(R.id.dm_button5)
-        button10 = findViewById(R.id.dm_button10)
-        button20 = findViewById(R.id.dm_button20)
-        buttonN5 = findViewById(R.id.buttonN5)
-        buttonN10 = findViewById(R.id.buttonN10)
-        buttonN20 = findViewById(R.id.buttonN20)
-        buttonExit = findViewById(R.id.buttonExit)
-        buttonL = findViewById(R.id.dm_buttonL)
-        buttonR = findViewById(R.id.dm_buttonR)
-        buttonConnect = findViewById(R.id.buttonConnect)
-        textView = findViewById(R.id.textView)
-        statusText = findViewById(R.id.dm_statusText)
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/cm"
+                android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                android:textColor="#009688" />
+        </LinearLayout>
 
-        buttonConnect.isVisible = false
+        <TextView
+            android:id="@+id/textView5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"
+            android:text="@string/moveF"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
-        button5.setOnClickListener {
-            disableButton()
-            writeByte("M05")
-            distance()
-        }
-        button10.setOnClickListener {
-            disableButton()
-            writeByte("M10")
-            distance()
-        }
-        button20.setOnClickListener {
-            disableButton()
-            writeByte("M20")
-            distance()
-        }
-        buttonN5.setOnClickListener {
-            disableButton()
-            writeByte("N05")
-            distance()
-        }
-        buttonN10.setOnClickListener {
-            disableButton()
-            writeByte("N10")
-            distance()
-        }
-        buttonN20.setOnClickListener {
-            disableButton()
-            writeByte("N20")
-            distance()
-        }
-        buttonL.setOnClickListener {
-            disableButton()
-            writeByte("ML")
-            distance()
-        }
-        buttonR.setOnClickListener {
-            disableButton()
-            writeByte("MR")
-            distance()
-        }
-        buttonExit.setOnClickListener {
-            eStop() //method to exit
-        }
-        buttonConnect.setOnClickListener {
-            statusText.text = MyApp.setupBluetoothConnection(this,this, MyApp.address)
-            buttonConnect.isVisible = false
-            enableButton()
-        }
-        distance()
-    }
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
 
-    @Deprecated("This method has been deprecated in favor of using the\n      {@link OnBackPressedDispatcher} via {@link #getOnBackPressedDispatcher()}.\n      The OnBackPressedDispatcher controls how back button events are dispatched\n      to one or more {@link OnBackPressedCallback} objects.")
-    @Suppress("DEPRECATION")
-    override fun onBackPressed() {
-        super.onBackPressed()
-        eStop()
-    }
+            <Button
+                android:id="@+id/dm_button5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/step5"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
-    private fun eStop() {
-        writeByte("EMO")
-        finish()
-    }
+            <Button
+                android:id="@+id/dm_button10"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/step10"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
-    private fun writeByte(command: String) {
-        try {
-            if (MyApp.btSocket != null) {
-                val socket = MyApp.btSocket!!
-                if (socket.isConnected) {
-                    dos = DataOutputStream(socket.outputStream)
-                    dos.write(command.toByteArray(Charsets.UTF_8))
-                    dos.flush()
-                } else {
-                    reconnectSocket()
-                }
-            } else {
-                handleNoSocketError()
-            }
-        } catch (e: IOException) {
-            handleWriteError(e)
-        } finally {
-            // Re-enable button after operations are complete
-            enableButton()
-        }
-    }
+            <Button
+                android:id="@+id/dm_button20"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/step20"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+        </LinearLayout>
 
-    // Helper functions
-    @SuppressLint("MissingPermission")
-    private fun reconnectSocket() {
-        try {
-            MyApp.btSocket?.connect()
-            statusText.text = if (MyApp.btSocket?.isConnected == true) {
-                "Connected."
-            } else {
-                "Failed to connect."
-            }
-        } catch (e: IOException) {
-            handleConnectionError(e)
-        }
-    }
+        <TextView
+            android:id="@+id/textView6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"
+            android:text="@string/mover"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
-    private fun handleNoSocketError() {
-        statusText.text = getString(R.string.no_socket_error)
-        buttonConnect.isVisible = true
-    }
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
 
-    private fun handleReadError(e: IOException) {
-        statusText.text = getString(R.string.error_read_byte, e.message)
-        buttonConnect.isVisible = true
-        MyApp.btSocket = null
-    }
+            <Button
+                android:id="@+id/buttonN5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/step5"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
-    private fun handleWriteError(e: IOException) {
-        statusText.text = getString(R.string.error_write_byte, e.message)
-        buttonConnect.isVisible = true
-        MyApp.btSocket = null
-    }
+            <Button
+                android:id="@+id/buttonN10"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/step10"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
-    private fun handleConnectionError(e: IOException) {
-        statusText.text = getString(R.string.connection_error, e.message)
-        buttonConnect.isVisible = true
-        MyApp.btSocket = null
-    }
+            <Button
+                android:id="@+id/buttonN20"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/step20"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+        </LinearLayout>
 
-    private fun enableButton() {
-        button5.isEnabled = true
-        button10.isEnabled = true
-        button20.isEnabled = true
-        buttonN5.isEnabled = true
-        buttonN10.isEnabled = true
-        buttonN20.isEnabled = true
-        buttonL.isEnabled = true
-        buttonR.isEnabled = true
-    }
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
 
-    private fun disableButton() {
-        button5.isEnabled = false
-        button10.isEnabled = false
-        button20.isEnabled = false
-        buttonN5.isEnabled = false
-        buttonN10.isEnabled = false
-        buttonN20.isEnabled = false
-        buttonL.isEnabled = false
-        buttonR.isEnabled = false
-    }
+            <Button
+                android:id="@+id/dm_buttonL"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/LEFT"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
-    private fun distance() {
-        disableButton()
-        val timeoutDuration = 1_000L // in milliseconds
-        val startTime = System.currentTimeMillis()
+            <Button
+                android:id="@+id/buttonExit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/btnExit"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
-        try {
-            while (true) {
-                // Check for timeout
-                val currentTime = System.currentTimeMillis()
-                if (currentTime - startTime >= timeoutDuration) {
-                    statusText.text = getString(R.string.no_data)
-                    break
-                }
+            <Button
+                android:id="@+id/dm_buttonR"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/RIGHT"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+        </LinearLayout>
 
-                if (MyApp.btSocket != null) {
-                    val socket = MyApp.btSocket!!
-                    if (socket.isConnected) {
-                        val readBuffer = ByteArray(1024)
-                        dis = DataInputStream(socket.inputStream)
-                        val available = dis.available()
-                        if(available > 6) {
-                            val bytes = dis.read(readBuffer)
-                            if (bytes > 0) {
-                                val receivedData = String(readBuffer, 0, bytes, Charsets.UTF_8)
-                                if(receivedData.length > 6) {
-                                    // Update the UI on the main thread
+        <Button
+            android:id="@+id/buttonConnect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_gravity="center"
+            android:text="@string/connect"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
-                                    if(receivedData.contains('R')||receivedData.contains('e')||receivedData.contains('a')||receivedData.contains('y')) {
-                                        textView.text = getString(R.string.cm)
-                                    } else {
-                                        val c = receivedData.indexOf(" c")
-                                        val i = receivedData.indexOf("D")
-                                        if(c == -1) {
-                                            val cm = "${receivedData.substring(i + 1)} cm"
-                                            textView.text = cm
-                                        } else {
-                                            textView.text = receivedData.substring(i+1)
-                                        }
-                                    }
+        <TextView
+            android:id="@+id/dm_statusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:layout_gravity="center"/>
+    </LinearLayout>
 
-                                    statusText.text = ""
-                                    break
-                                }
-                            } else {
-                                // End of stream
-                                statusText.text = getString(R.string.no_data)
-                                break
-                            }
-                        }
-                    } else {
-                        // Socket is not connected
-                        reconnectSocket()
-                    }
-                } else {
-                    // No socket available
-                    handleNoSocketError()
-                    break
-                }
-            }
-        } catch (e: IOException) {
-            // Handle IOException
-            handleReadError(e)
-        } finally {
-            // Re-enable button after operations are complete
-            enableButton()
-        }
-    }
-}
+
+</ScrollView>
