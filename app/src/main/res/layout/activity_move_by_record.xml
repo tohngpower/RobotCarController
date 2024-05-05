@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    tools:ignore="ButtonStyle"
     tools:context=".MoveByRecord">
 
     <EditText
@@ -19,7 +20,7 @@
         android:background="@android:color/black"
         android:digits="1234"
         android:gravity="top"
-        android:hint="@string/inputnumber"
+        android:hint="@string/inputNumber"
         android:inputType="number|textMultiLine"
         android:maxHeight="300dp"
         android:minHeight="100dp"
@@ -37,48 +38,53 @@
         android:layout_gravity="center"
         android:text="@string/hello_world" />
 
-    <Button
-        android:id="@+id/buttonStart"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
         android:layout_gravity="center"
-        android:text="@string/btnStart"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/buttonStart"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/btnStart"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+
+        <Button
+            android:id="@+id/buttonSave"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/save"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+
+        <Button
+            android:id="@+id/buttonBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/btnExit"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+    </LinearLayout>
 
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
         android:layout_gravity="center"
-        android:indeterminate="true"
-        android:indeterminateDrawable="@android:drawable/progress_indeterminate_horizontal"
         android:max="100"
         android:minWidth="300dp"
         android:minHeight="50dp"
         android:progress="0" />
 
-    <TextView
-        android:id="@+id/waitText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="20dp"
-        android:text="@string/wait" />
-
     <Button
-        android:id="@+id/buttonSave"
+        android:id="@+id/rec_buttonConnect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
         android:layout_gravity="center"
-        android:text="@string/save"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
-
-    <Button
-        android:id="@+id/buttonBack"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="@string/btnExit"
+        android:text="@string/connect"
         android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 </LinearLayout>
