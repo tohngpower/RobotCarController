@@ -1,14 +1,16 @@
 package com.personal.robot_v4
 
-import android.bluetooth.BluetoothSocket
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
+import java.io.DataInputStream
+import java.io.DataOutputStream
 import java.io.IOException
 
 class DistanceMeasurement : AppCompatActivity() {
-    private var btSocket: BluetoothSocket? = MyApp.btSocket
     private lateinit var button5: Button
     private lateinit var button10: Button
     private lateinit var button20: Button
@@ -16,165 +18,154 @@ class DistanceMeasurement : AppCompatActivity() {
     private lateinit var buttonN10: Button
     private lateinit var buttonN20: Button
     private lateinit var buttonExit: Button
+    private lateinit var buttonConnect: Button
     private lateinit var buttonL: Button
     private lateinit var buttonR: Button
     private lateinit var textView: TextView
+    private lateinit var statusText: TextView
+    private lateinit var dos: DataOutputStream
+    private lateinit var dis: DataInputStream
 
-    @Volatile
-    var haveData = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_distance_measurement)
 
-        button5 = findViewById(R.id.button5)
-        button10 = findViewById(R.id.button10)
-        button20 = findViewById(R.id.button20)
+        button5 = findViewById(R.id.dm_button5)
+        button10 = findViewById(R.id.dm_button10)
+        button20 = findViewById(R.id.dm_button20)
         buttonN5 = findViewById(R.id.buttonN5)
         buttonN10 = findViewById(R.id.buttonN10)
         buttonN20 = findViewById(R.id.buttonN20)
         buttonExit = findViewById(R.id.buttonExit)
-        buttonL = findViewById(R.id.buttonL)
-        buttonR = findViewById(R.id.buttonR)
+        buttonL = findViewById(R.id.dm_buttonL)
+        buttonR = findViewById(R.id.dm_buttonR)
+        buttonConnect = findViewById(R.id.buttonConnect)
         textView = findViewById(R.id.textView)
+        statusText = findViewById(R.id.dm_statusText)
+
+        buttonConnect.isVisible = false
 
         button5.setOnClickListener {
-            move5() //method to move 5 steps
+            disableButton()
+            writeByte("M05")
+            distance()
         }
         button10.setOnClickListener {
-            move10() //method to move 10 steps
+            disableButton()
+            writeByte("M10")
+            distance()
         }
         button20.setOnClickListener {
-            move20() //method to move 20 steps
+            disableButton()
+            writeByte("M20")
+            distance()
         }
         buttonN5.setOnClickListener {
-            moveN5() //method to move -5 steps
+            disableButton()
+            writeByte("N05")
+            distance()
         }
         buttonN10.setOnClickListener {
-            moveN10() //method to move -10 steps
+            disableButton()
+            writeByte("N10")
+            distance()
         }
         buttonN20.setOnClickListener {
-            moveN20() //method to move -20 steps
+            disableButton()
+            writeByte("N20")
+            distance()
         }
         buttonL.setOnClickListener {
-            left() //method to move left
+            disableButton()
+            writeByte("ML")
+            distance()
         }
         buttonR.setOnClickListener {
-            right() //method to move right
+            disableButton()
+            writeByte("MR")
+            distance()
         }
         buttonExit.setOnClickListener {
             eStop() //method to exit
         }
-        distance
+        buttonConnect.setOnClickListener {
+            statusText.text = MyApp.setupBluetoothConnection(this,this, MyApp.address)
+            buttonConnect.isVisible = false
+            enableButton()
+        }
+        distance()
     }
 
-    private fun move5() {
-        if (btSocket != null) {
-            try {
-                btSocket!!.outputStream.write("M05".toByteArray())
-                distance
-            } catch (e: IOException) {
-                MyApp.instance?.msg("Error")
-            }
-        } else {
-            MyApp.instance?.msg("Please turn on bluetooth module.")
-        }
-    }
-
-    private fun move10() {
-        if (btSocket != null) {
-            try {
-                btSocket!!.outputStream.write("M10".toByteArray())
-                distance
-            } catch (e: IOException) {
-                MyApp.instance?.msg("Error")
-            }
-        }
-    }
-
-    private fun move20() {
-        if (btSocket != null) {
-            try {
-                btSocket!!.outputStream.write("M20".toByteArray())
-                distance
-            } catch (e: IOException) {
-                MyApp.instance?.msg("Error")
-            }
-        }
-    }
-
-    private fun moveN5() {
-        if (btSocket != null) {
-            try {
-                btSocket!!.outputStream.write("N05".toByteArray())
-                distance
-            } catch (e: IOException) {
-                MyApp.instance?.msg("Error")
-            }
-        }
-    }
-
-    private fun moveN10() {
-        if (btSocket != null) {
-            try {
-                btSocket!!.outputStream.write("N10".toByteArray())
-                distance
-            } catch (e: IOException) {
-                MyApp.instance?.msg("Error")
-            }
-        }
-    }
-
-    private fun moveN20() {
-        if (btSocket != null) {
-            try {
-                btSocket!!.outputStream.write("N20".toByteArray())
-                distance
-            } catch (e: IOException) {
-                MyApp.instance?.msg("Error")
-            }
-        }
-    }
-
-    private fun left() {
-        if (btSocket != null) {
-            try {
-                btSocket!!.outputStream.write("ML".toByteArray())
-                distance
-            } catch (e: IOException) {
-                MyApp.instance?.msg("Error")
-            }
-        }
-    }
-
-    private fun right() {
-        if (btSocket != null) {
-            try {
-                btSocket!!.outputStream.write("MR".toByteArray())
-                distance
-            } catch (e: IOException) {
-                MyApp.instance?.msg("Error")
-            }
-        }
+    @Deprecated("This method has been deprecated in favor of using the\n      {@link OnBackPressedDispatcher} via {@link #getOnBackPressedDispatcher()}.\n      The OnBackPressedDispatcher controls how back button events are dispatched\n      to one or more {@link OnBackPressedCallback} objects.")
+    @Suppress("DEPRECATION")
+    override fun onBackPressed() {
+        super.onBackPressed()
+        eStop()
     }
 
     private fun eStop() {
-        if (btSocket != null) {
-            try {
-                btSocket!!.outputStream.write("EMO".toByteArray())
-            } catch (e: IOException) {
-                MyApp.instance?.msg("Error")
+        writeByte("EMO")
+        finish()
+    }
+
+    private fun writeByte(command: String) {
+        try {
+            if (MyApp.btSocket != null) {
+                val socket = MyApp.btSocket!!
+                if (socket.isConnected) {
+                    dos = DataOutputStream(socket.outputStream)
+                    dos.write(command.toByteArray(Charsets.UTF_8))
+                    dos.flush()
+                } else {
+                    reconnectSocket()
+                }
+            } else {
+                handleNoSocketError()
             }
+        } catch (e: IOException) {
+            handleWriteError(e)
+        } finally {
+            // Re-enable button after operations are complete
+            enableButton()
         }
     }
 
-    override fun onPause() {
-        super.onPause()
-        eStop()
+    // Helper functions
+    @SuppressLint("MissingPermission")
+    private fun reconnectSocket() {
+        try {
+            MyApp.btSocket?.connect()
+            statusText.text = if (MyApp.btSocket?.isConnected == true) {
+                "Connected."
+            } else {
+                "Failed to connect."
+            }
+        } catch (e: IOException) {
+            handleConnectionError(e)
+        }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        eStop()
+    private fun handleNoSocketError() {
+        statusText.text = getString(R.string.no_socket_error)
+        buttonConnect.isVisible = true
+    }
+
+    private fun handleReadError(e: IOException) {
+        statusText.text = getString(R.string.error_read_byte, e.message)
+        buttonConnect.isVisible = true
+        MyApp.btSocket = null
+    }
+
+    private fun handleWriteError(e: IOException) {
+        statusText.text = getString(R.string.error_write_byte, e.message)
+        buttonConnect.isVisible = true
+        MyApp.btSocket = null
+    }
+
+    private fun handleConnectionError(e: IOException) {
+        statusText.text = getString(R.string.connection_error, e.message)
+        buttonConnect.isVisible = true
+        MyApp.btSocket = null
     }
 
     private fun enableButton() {
@@ -199,31 +190,71 @@ class DistanceMeasurement : AppCompatActivity() {
         buttonR.isEnabled = false
     }
 
-    private val distance: Unit
-        get() {
-            disableButton()
-            haveData = true
-            val readBuffer = ByteArray(1024)
-            var bytes: Int
-            while (haveData) {
-                try {
-                    val available = btSocket!!.inputStream.available()
-                    if (available > 6) {
-                        bytes = btSocket!!.inputStream.read(readBuffer)
-                        if (bytes > 0) {
-                            val distance = String(readBuffer)
-                            if (distance.length > 6) {
-                                val i = distance.indexOf('D')
-                                 textView.text = distance.substring(i + 1)
-                                haveData = false
+    private fun distance() {
+        disableButton()
+        val timeoutDuration = 1_000L // in milliseconds
+        val startTime = System.currentTimeMillis()
+
+        try {
+            while (true) {
+                // Check for timeout
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - startTime >= timeoutDuration) {
+                    statusText.text = getString(R.string.no_data)
+                    break
+                }
+
+                if (MyApp.btSocket != null) {
+                    val socket = MyApp.btSocket!!
+                    if (socket.isConnected) {
+                        val readBuffer = ByteArray(1024)
+                        dis = DataInputStream(socket.inputStream)
+                        val available = dis.available()
+                        if(available > 6) {
+                            val bytes = dis.read(readBuffer)
+                            if (bytes > 0) {
+                                val receivedData = String(readBuffer, 0, bytes, Charsets.UTF_8)
+                                if(receivedData.length > 6) {
+                                    // Update the UI on the main thread
+
+                                    if(receivedData.contains('R')||receivedData.contains('e')||receivedData.contains('a')||receivedData.contains('y')) {
+                                        textView.text = getString(R.string.cm)
+                                    } else {
+                                        val c = receivedData.indexOf(" c")
+                                        val i = receivedData.indexOf("D")
+                                        if(c == -1) {
+                                            val cm = "${receivedData.substring(i + 1)} cm"
+                                            textView.text = cm
+                                        } else {
+                                            textView.text = receivedData.substring(i+1)
+                                        }
+                                    }
+
+                                    statusText.text = ""
+                                    break
+                                }
+                            } else {
+                                // End of stream
+                                statusText.text = getString(R.string.no_data)
+                                break
                             }
                         }
+                    } else {
+                        // Socket is not connected
+                        reconnectSocket()
                     }
-                } catch (e: IOException) {
-                    MyApp.instance?.msg("Error, No data from Bluetooth module")
-                    haveData = false
+                } else {
+                    // No socket available
+                    handleNoSocketError()
+                    break
                 }
             }
+        } catch (e: IOException) {
+            // Handle IOException
+            handleReadError(e)
+        } finally {
+            // Re-enable button after operations are complete
             enableButton()
         }
+    }
 }
