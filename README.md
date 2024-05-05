@@ -1,4 +1,4 @@
-# Android app to control Robot car using Arduino UNO
+# Android app to control Robot car via Bluetooth module
 ## Equipment
 * L298N DC motor driver
 * Arduino UNO
@@ -27,3 +27,11 @@
 * D9 DC motor 2
 * D10 DC motor 2
 * D11 DC motor 2
+## Function
+* Line tracking
+* Object evasion
+* Move zigzag
+* Distance measurement
+* Manual movement
+* Moving by data in record.txt
+* Select robot type via mac address
