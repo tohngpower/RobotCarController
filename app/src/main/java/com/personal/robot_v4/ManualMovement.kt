@@ -1,29 +1,40 @@
 package com.personal.robot_v4
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothSocket
 import android.os.Bundle
 import android.view.MotionEvent
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import java.io.*
 
 class ManualMovement : AppCompatActivity() {
-    private var btSocket: BluetoothSocket? = MyApp.btSocket
-    private lateinit var buttonBW: Button
-    private lateinit var buttonFW: Button
-    private lateinit var buttonLT: Button
-    private lateinit var buttonRT: Button
+    private lateinit var buttonBW: ImageButton
+    private lateinit var buttonFW: ImageButton
+    private lateinit var buttonLT: ImageButton
+    private lateinit var buttonRT: ImageButton
     private lateinit var buttonBack: Button
+    private lateinit var buttonConnect: Button
     private lateinit var statusText: TextView
-    @Volatile
-    var haveData = false
+    private lateinit var dos: DataOutputStream
+    private lateinit var dis: DataInputStream
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_manual_movement)
+
+        buttonFW = findViewById(R.id.buttonFW)
+        buttonBW = findViewById(R.id.buttonBW)
+        buttonLT = findViewById(R.id.buttonLT)
+        buttonRT = findViewById(R.id.buttonRT)
+        buttonBack = findViewById(R.id.mn_buttonBack)
+        buttonConnect = findViewById(R.id.mn_buttonConnect)
+        statusText = findViewById(R.id.mn_text)
+
+        buttonConnect.isVisible = false
 
         buttonFW.setOnTouchListener { v, event ->
             when(event.action){
@@ -32,29 +43,17 @@ class ManualMovement : AppCompatActivity() {
                     buttonBW.isEnabled = false
                     buttonLT.isEnabled = false
                     buttonRT.isEnabled = false
-                    try {
-                        btSocket!!.outputStream.write("fw".toByteArray())
-                        checkReady()
-                        val temp = "Moving forward"
-                        statusText.text = temp
-                    } catch (e: IOException) {
-                        MyApp.instance?.msg("Error on moving forward")
-                        eStop()
-                    }
+                    writeByte("fw")
+                    checkReady()
+                    statusText.text = getString(R.string.moving_forward)
                 }
                 MotionEvent.ACTION_UP -> {
                     buttonBW.isEnabled = true
                     buttonLT.isEnabled = true
                     buttonRT.isEnabled = true
-                    try {
-                        btSocket!!.outputStream.write("00".toByteArray())
-                        checkReady()
-                        val temp = "Ready"
-                        statusText.text = temp
-                    } catch (e: IOException) {
-                        MyApp.instance?.msg("Error on stop")
-                        eStop()
-                    }
+                    writeByte("00")
+                    checkReady()
+                    statusText.text = getString(R.string.ready)
                 }
             }
             true
@@ -66,29 +65,17 @@ class ManualMovement : AppCompatActivity() {
                     buttonFW.isEnabled = false
                     buttonLT.isEnabled = false
                     buttonRT.isEnabled = false
-                    try {
-                        btSocket!!.outputStream.write("bw".toByteArray())
-                        checkReady()
-                        val temp = "Moving backward"
-                        statusText.text = temp
-                    } catch (e: IOException) {
-                        MyApp.instance?.msg("Error on moving backward")
-                        eStop()
-                    }
+                    writeByte("bw")
+                    checkReady()
+                    statusText.text = getString(R.string.moving_backward)
                 }
                 MotionEvent.ACTION_UP -> {
                     buttonFW.isEnabled = true
                     buttonLT.isEnabled = true
                     buttonRT.isEnabled = true
-                    try {
-                        btSocket!!.outputStream.write("00".toByteArray())
-                        checkReady()
-                        val temp = "Ready"
-                        statusText.text = temp
-                    } catch (e: IOException) {
-                        MyApp.instance?.msg("Error on stop")
-                        eStop()
-                    }
+                    writeByte("00")
+                    checkReady()
+                    statusText.text = getString(R.string.ready)
                 }
             }
             true
@@ -100,29 +87,17 @@ class ManualMovement : AppCompatActivity() {
                     buttonFW.isEnabled = false
                     buttonBW.isEnabled = false
                     buttonRT.isEnabled = false
-                    try {
-                        btSocket!!.outputStream.write("lt".toByteArray())
-                        checkReady()
-                        val temp = "Turning left"
-                        statusText.text = temp
-                    } catch (e: IOException) {
-                        MyApp.instance?.msg("Error on turning left")
-                        eStop()
-                    }
+                    writeByte("lt")
+                    checkReady()
+                    statusText.text = getString(R.string.turning_left)
                 }
                 MotionEvent.ACTION_UP -> {
                     buttonFW.isEnabled = true
                     buttonBW.isEnabled = true
                     buttonRT.isEnabled = true
-                    try {
-                        btSocket!!.outputStream.write("00".toByteArray())
-                        checkReady()
-                        val temp = "Ready"
-                        statusText.text = temp
-                    } catch (e: IOException) {
-                        MyApp.instance?.msg("Error on stop")
-                        eStop()
-                    }
+                    writeByte("00")
+                    checkReady()
+                    statusText.text = getString(R.string.ready)
                 }
             }
             true
@@ -134,78 +109,147 @@ class ManualMovement : AppCompatActivity() {
                     buttonFW.isEnabled = false
                     buttonBW.isEnabled = false
                     buttonLT.isEnabled = false
-                    try {
-                        btSocket!!.outputStream.write("rt".toByteArray())
-                        checkReady()
-                        val temp = "Turning right"
-                        statusText.text = temp
-                    } catch (e: IOException) {
-                        MyApp.instance?.msg("Error on turning right")
-                        eStop()
-                    }
+                    writeByte("rt")
+                    checkReady()
+                    statusText.text = getString(R.string.turning_right)
                 }
                 MotionEvent.ACTION_UP -> {
                     buttonFW.isEnabled = true
                     buttonBW.isEnabled = true
                     buttonLT.isEnabled = true
-                    try {
-                        btSocket!!.outputStream.write("00".toByteArray())
-                        checkReady()
-                        val temp = "Ready"
-                        statusText.text = temp
-                    } catch (e: IOException) {
-                        MyApp.instance?.msg("Error on stop")
-                        eStop()
-                    }
+                    writeByte("00")
+                    checkReady()
+                    statusText.text = getString(R.string.ready)
                 }
             }
             true
         }
-        buttonBack.setOnClickListener { eStop() }
+        buttonBack.setOnClickListener {
+            eStop()
+        }
+        buttonConnect.setOnClickListener {
+            statusText.text = MyApp.setupBluetoothConnection(this,this, MyApp.address)
+            buttonConnect.isVisible = false
+        }
         checkReady()
-        val temp = "Ready"
-        statusText.text = temp
-    }
-
-    override fun onPause() {
-        super.onPause()
-        eStop()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        eStop()
+        statusText.text = getString(R.string.ready)
     }
 
     private fun checkReady() {
-        haveData = true
-        val readBuffer = ByteArray(1024)
-        var bytes: Int
-        while (haveData) {
-            try {
-                val available = btSocket!!.inputStream.available()
-                if (available > 4) {
-                    bytes = btSocket!!.inputStream.read(readBuffer)
-                    if (bytes > 0) {
-                        haveData = false
-                    }
+        val timeoutDuration = 1_000L // in milliseconds
+        val startTime = System.currentTimeMillis()
+        try {
+            while (true) {
+                // Check for timeout
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - startTime >= timeoutDuration) {
+                    statusText.text = getString(R.string.no_data)
+                    break
                 }
-            } catch (e: IOException) {
-                MyApp.instance?.msg("Error, No data from Bluetooth module")
-                haveData = false
-                eStop()
+
+                if (MyApp.btSocket != null) {
+                    val socket = MyApp.btSocket!!
+                    if (socket.isConnected) {
+                        val readBuffer = ByteArray(1024)
+                        dis = DataInputStream(socket.inputStream)
+                        val available = dis.available()
+                        if(available > 4) {
+                            val bytes = dis.read(readBuffer)
+                            if (bytes > 0) {
+                                val receivedData = String(readBuffer, 0, bytes, Charsets.UTF_8)
+                                if(receivedData.length > 4) {
+                                    // Update the UI on the main thread
+                                    statusText.text = receivedData
+                                    break
+                                }
+                            } else {
+                                // End of stream
+                                statusText.text = getString(R.string.no_data)
+                                break
+                            }
+                        }
+                    } else {
+                        // Socket is not connected
+                        reconnectSocket()
+                    }
+                } else {
+                    // No socket available
+                    handleNoSocketError()
+                    break
+                }
             }
+        } catch (e: IOException) {
+            // Handle IOException
+            handleReadError(e)
         }
     }
 
+    @Deprecated("This method has been deprecated in favor of using the\n      {@link OnBackPressedDispatcher} via {@link #getOnBackPressedDispatcher()}.\n      The OnBackPressedDispatcher controls how back button events are dispatched\n      to one or more {@link OnBackPressedCallback} objects.")
+    @Suppress("DEPRECATION")
+    override fun onBackPressed() {
+        super.onBackPressed()
+        eStop()
+    }
+
     private fun eStop() {
-        if (btSocket != null) {
-            try {
-                btSocket!!.outputStream.write("EMO".toByteArray())
-                checkReady()
-            } catch (e: IOException) {
-                MyApp.instance?.msg("Error")
+        writeByte("EMO")
+        finish()
+    }
+
+    private fun writeByte(command: String) {
+        try {
+            if (MyApp.btSocket != null) {
+                val socket = MyApp.btSocket!!
+                if (socket.isConnected) {
+                    dos = DataOutputStream(socket.outputStream)
+                    dos.write(command.toByteArray(Charsets.UTF_8))
+                    dos.flush()
+                } else {
+                    reconnectSocket()
+                }
+            } else {
+                handleNoSocketError()
             }
+        } catch (e: IOException) {
+            handleWriteError(e)
         }
+    }
+
+    // Helper functions
+    @SuppressLint("MissingPermission")
+    private fun reconnectSocket() {
+        try {
+            MyApp.btSocket?.connect()
+            statusText.text = if (MyApp.btSocket?.isConnected == true) {
+                "Connected."
+            } else {
+                "Failed to connect."
+            }
+        } catch (e: IOException) {
+            handleConnectionError(e)
+        }
+    }
+
+    private fun handleNoSocketError() {
+        statusText.text = getString(R.string.no_socket_error)
+        buttonConnect.isVisible = true
+    }
+
+    private fun handleReadError(e: IOException) {
+        statusText.text = getString(R.string.error_read_byte, e.message)
+        buttonConnect.isVisible = true
+        MyApp.btSocket = null
+    }
+
+    private fun handleWriteError(e: IOException) {
+        statusText.text = getString(R.string.error_write_byte, e.message)
+        buttonConnect.isVisible = true
+        MyApp.btSocket = null
+    }
+
+    private fun handleConnectionError(e: IOException) {
+        statusText.text = getString(R.string.connection_error, e.message)
+        buttonConnect.isVisible = true
+        MyApp.btSocket = null
     }
 }
