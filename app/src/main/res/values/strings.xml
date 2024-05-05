@@ -31,7 +31,7 @@
     <string name="hello_world">Hello Square World!</string>
     <string name="btnStart">Start</string>
     <string name="wait" />
-    <string name="inputnumber">1:Move forward\n2:Reverse\n3:Turn left\n4:Turn right</string>
+    <string name="inputNumber">1:Move forward\n2:Reverse\n3:Turn left\n4:Turn right</string>
     <string name="save">Save</string>
     <string name="init_Text">111222</string>
     <string name="title_activity_robot_controller">Robot_Tohng</string>
@@ -40,4 +40,23 @@
     <string name="MN">Manual</string>
     <string name="title_activity_robot_controller2">RC_MK2</string>
     <string name="mode">Mode</string>
+    <string name="close">Close</string>
+    <string name="connect">Connect</string>
+    <string name="no_socket_error">Error during reading/writing byte. Please connect Bluetooth again.</string>
+    <string name="error_read_byte">Error during read byte: %1$s</string>
+    <string name="connection_error">Connection error: %1$s</string>
+    <string name="error_write_byte">Error during write byte: %1$s</string>
+    <string name="no_data">No data received.</string>
+    <string name="please_connect_bt">Please connect Bluetooth again.</string>
+    <string name="already_stopped">Already stopped.</string>
+    <string name="error">Error: %1$s</string>
+    <string name="moving_forward">Moving forward</string>
+    <string name="ready">Ready</string>
+    <string name="moving_backward">Moving backward</string>
+    <string name="turning_left">Turning left</string>
+    <string name="turning_right">Turning right</string>
+    <string name="please_fill_number">Please fill in number for movement direction of Robot car</string>
+    <string name="saved_to">Saved to %1$s/%2$s</string>
+    <string name="please_wait">Please wait while Robot car is moving!</string>
+    <string name="complete_moving">Complete moving.</string>
 </resources>
