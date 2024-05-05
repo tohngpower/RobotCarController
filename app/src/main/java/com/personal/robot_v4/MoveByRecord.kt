@@ -1,38 +1,42 @@
 package com.personal.robot_v4
 
-import android.bluetooth.BluetoothSocket
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.method.ScrollingMovementMethod
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import androidx.core.view.isVisible
 import java.io.BufferedReader
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.io.InputStream
 import java.io.InputStreamReader
 
 class MoveByRecord : AppCompatActivity() {
-    var btSocket: BluetoothSocket? = MyApp.btSocket
     private lateinit var buttonBack: Button
     private lateinit var buttonSave: Button
     private lateinit var buttonStart: Button
+    private lateinit var buttonConnect: Button
     private lateinit var recordView: EditText
     private lateinit var progressBar: ProgressBar
-    private lateinit var statusView: TextView
-    private lateinit var waitText: TextView
+    private lateinit var statusText: TextView
+    private lateinit var dos: DataOutputStream
+    private lateinit var dis: DataInputStream
+    private var content = StringBuilder()
+    private val fileName = "record.txt"
+    private var fis: FileInputStream? = null
+    private var p = 0
+    private val movingHandler = Handler(Looper.getMainLooper())
+    private var actionIndex = 0
 
-    @Volatile
-    var haveData = false
-    var content = StringBuilder()
-    var busy = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_move_by_record)
@@ -40,200 +44,257 @@ class MoveByRecord : AppCompatActivity() {
         buttonBack = findViewById(R.id.buttonBack)
         buttonSave = findViewById(R.id.buttonSave)
         buttonStart = findViewById(R.id.buttonStart)
+        buttonConnect = findViewById(R.id.rec_buttonConnect)
         recordView = findViewById(R.id.recordView)
         progressBar = findViewById(R.id.progressBar)
-        statusView = findViewById(R.id.statusView)
-        waitText = findViewById(R.id.waitText)
+        statusText = findViewById(R.id.statusView)
 
         recordView.movementMethod = ScrollingMovementMethod()
+        buttonConnect.isVisible = false
 
         buttonStart.setOnClickListener {
             buttonStart.isEnabled = false
+            buttonStart.isClickable = false
             buttonSave.isEnabled = false
+            buttonSave.isClickable = false
             buttonBack.isEnabled = false
+            buttonBack.isClickable = false
             recordView.isEnabled = false
-            MoveByRec(this).execute() //start moving by record
+            movingHandler.post(startMoving)
         }
-        buttonSave.setOnClickListener { save() }
-        buttonBack.setOnClickListener { eStop() }
+        buttonSave.setOnClickListener {
+            save()
+        }
+        buttonBack.setOnClickListener {
+            eStop()
+        }
+        buttonConnect.setOnClickListener {
+            statusText.text = MyApp.setupBluetoothConnection(this,this, MyApp.address)
+            buttonConnect.isVisible = false
+        }
+        progressBar.progress = p
         checkReady()
         readText()
     }
 
-    override fun onPause() {
-        super.onPause()
-        eStop()
+    @Deprecated("This method has been deprecated in favor of using the\n      {@link OnBackPressedDispatcher} via {@link #getOnBackPressedDispatcher()}.\n      The OnBackPressedDispatcher controls how back button events are dispatched\n      to one or more {@link OnBackPressedCallback} objects.")
+    @Suppress("DEPRECATION")
+    override fun onBackPressed() {
+        if(actionIndex == 0) {
+            super.onBackPressed()
+            eStop()
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        eStop()
+        movingHandler.removeCallbacks(startMoving)
     }
 
     private fun checkReady() {
-        haveData = true
-        val readBuffer = ByteArray(1024)
-        var bytes: Int
-        while (haveData) {
-            try {
-                val available = btSocket!!.inputStream.available()
-                if (available > 4) {
-                    bytes = btSocket!!.inputStream.read(readBuffer)
-                    if (bytes > 0) {
-                        haveData = false
-                    }
-                }
-            } catch (e: IOException) {
-                MyApp.instance?.msg("Error, No data from Bluetooth module")
-                haveData = false
-                eStop()
-            }
-        }
-    }
+        val timeoutDuration = 1_000L // in milliseconds
+        val startTime = System.currentTimeMillis()
 
-    private fun readText() {
-        lateinit var fis: InputStream
         try {
-            fis = openFileInput(FILE_NAME)
-            val reader = BufferedReader(InputStreamReader(fis))
-            var buffer: String?
-            while (reader.readLine().also { buffer = it } != null) {
-                content.append(buffer)
-            }
-            recordView.setText(content)
-            val temp = "Ready"
-            statusView.text = temp
-        } catch (e: IOException) {
-            save()
-        } finally {
-            try {
-                fis.close()
-            } catch (e: IOException) {
-                MyApp.instance?.msg("Error, No file record.txt")
-            }
-        }
-    }
+            while (true) {
+                // Check for timeout
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - startTime >= timeoutDuration) {
+                    statusText.text = getString(R.string.no_data)
+                    writeByte("00")
 
-    private fun eStop() {
-        if (!busy) {
-            if (btSocket != null) {
-                try {
-                    btSocket!!.outputStream.write("EMO".toByteArray())
-                    checkReady()
-                } catch (e: IOException) {
-                    MyApp.instance?.msg("Error")
+                    break
+                }
+
+                if (MyApp.btSocket != null) {
+                    val socket = MyApp.btSocket!!
+                    if (socket.isConnected) {
+                        val readBuffer = ByteArray(1024)
+                        dis = DataInputStream(socket.inputStream)
+                        val available: Int = dis.available()
+                        if(available > 4) {
+                            val bytes:Int = dis.read(readBuffer)
+                            if (bytes > 0) {
+                                val receivedData = String(readBuffer, 0, bytes, Charsets.UTF_8)
+                                if(receivedData.length > 4) {
+                                    statusText.text = receivedData
+
+                                    break
+                                }
+                            } else {
+                                statusText.text = getString(R.string.no_data)
+
+                                break
+                            }
+                        }
+                    } else {
+                        // Socket is not connected
+                        reconnectSocket()
+                    }
+                } else {
+                    // No socket available
+                    handleNoSocketError()
+                    break
                 }
             }
+        } catch (e: IOException) {
+            // Handle IOException
+            handleReadError(e)
         }
     }
 
     private fun save() {
         val text = recordView.text.toString()
-        var temp = ""
-        if (text == temp) {
-            temp = "Please fill in number for movement direction of Robot car"
-            waitText.text = temp
+        if (text.isEmpty()) {
+            statusText.text = getString(R.string.please_fill_number)
         } else {
             var fos: FileOutputStream? = null
             try {
                 fos = openFileOutput(
-                    FILE_NAME,
+                    fileName,
                     Context.MODE_PRIVATE
                 )
                 fos.write(text.toByteArray())
                 content = StringBuilder()
                 content.append(text)
-                temp = "Saved to $filesDir/$FILE_NAME"
-                waitText.text = temp
+                statusText.text = getString(R.string.saved_to, filesDir, fileName)
             } catch (e: IOException) {
-                MyApp.instance?.msg("Error file not found!")
+                statusText.text = e.message.toString()
             } finally {
                 if (fos != null) {
                     try {
                         fos.close()
                     } catch (e: IOException) {
-                        MyApp.instance?.msg("Error file not found!")
+                        statusText.text = e.message.toString()
                     }
+                } else {
+                    statusText.text = getString(R.string.ready)
                 }
             }
         }
     }
 
-    companion object {
-        private const val FILE_NAME = "record.txt"
-
-        class MoveByRec(private val moveByRecord: MoveByRecord) {
-
-            private var p = 0
-
-            fun execute() {
-                // Launch a coroutine in the scope of the current view
-                CoroutineScope(Dispatchers.Main).launch {
-                    onPreExecute()
-                    val result = withContext(Dispatchers.IO) {
-                        doInBackground()
-                    }
-                    onPostExecute(result)
+    private fun readText() {
+        try {
+            if(openFileInput(fileName) == null) {
+                save()
+            } else {
+                fis = openFileInput(fileName)
+                val reader = BufferedReader(InputStreamReader(fis))
+                var buffer: String?
+                while (reader.readLine().also { buffer = it } != null) {
+                    content.append(buffer)
                 }
+                recordView.setText(content)
+                statusText.text = getString(R.string.ready)
             }
-
-            private fun onPreExecute() {
-                // UI-related initialization
-                val text = "Please wait while Robot car is moving!"
-                moveByRecord.waitText.text = text
-                moveByRecord.busy = true
-            }
-
-            private suspend fun doInBackground(): String {
-                // Perform background operations here
-                for (i in moveByRecord.content.indices) {
-                    when (moveByRecord.content[i]) {
-                        '1' -> performAction("fw", "Move forward",i)
-                        '2' -> performAction("bw", "Reverse",i)
-                        '3' -> performAction("lt", "Turn left",i)
-                        '4' -> performAction("rt", "Turn right",i)
-                    }
+        } catch (e: IOException) {
+            statusText.text = e.message.toString()
+        } finally {
+            try {
+                if(fis != null) {
+                    fis!!.close()
+                } else {
+                    statusText.text = getString(R.string.ready)
                 }
-                performAction("00", "Done",0)
-                return "Done"
+            } catch (e: IOException) {
+                statusText.text = e.message.toString()
             }
+        }
+    }
 
-            private suspend fun performAction(command: String, message: String, index: Int) {
-                // Handle the command and UI updates
-                try {
-                    withContext(Dispatchers.IO) {
-                        moveByRecord.btSocket!!.outputStream.write(command.toByteArray())
-                        moveByRecord.checkReady()
-                        moveByRecord.statusView.text = message
-                        moveByRecord.progressBar.progress = calculateProgress(index)
-                    }
-                } catch (e: IOException) {
-                    // Handle error
-                    withContext(Dispatchers.Main) {
-                        MyApp.instance?.msg("Error: $message")
-                        moveByRecord.eStop()
-                    }
+    private fun eStop() {
+        writeByte("EMO")
+        finish()
+    }
+
+    private fun writeByte(command: String) {
+        try {
+            if (MyApp.btSocket != null) {
+                val socket = MyApp.btSocket!!
+                if (socket.isConnected) {
+                    dos = DataOutputStream(socket.outputStream)
+                    dos.write(command.toByteArray(Charsets.UTF_8))
+                    dos.flush()
+                } else {
+                    reconnectSocket()
                 }
+            } else {
+                handleNoSocketError()
             }
+        } catch (e: IOException) {
+            handleWriteError(e)
+        }
+    }
 
-            private fun calculateProgress(i: Int): Int {
-                // Calculate the progress as a percentage
-                p = 100 * (i + 1) / moveByRecord.content.length
-                return p
+    // Helper functions
+    @SuppressLint("MissingPermission")
+    private fun reconnectSocket() {
+        try {
+            MyApp.btSocket?.connect()
+            statusText.text = if (MyApp.btSocket?.isConnected == true) {
+                "Connected."
+            } else {
+                "Failed to connect."
             }
+        } catch (e: IOException) {
+            handleConnectionError(e)
+        }
+    }
 
-            private fun onPostExecute(result: String) {
-                // UI-related finalization
-                var text = "Complete moving."
-                moveByRecord.waitText.text = text
-                text = "Stop"
-                moveByRecord.statusView.text = text
-                moveByRecord.buttonStart.isEnabled = true
-                moveByRecord.buttonSave.isEnabled = true
-                moveByRecord.buttonBack.isEnabled = true
-                moveByRecord.recordView.isEnabled = true
-                moveByRecord.busy = false
-                MyApp.instance?.msg(result)
+    private fun handleNoSocketError() {
+        statusText.text = getString(R.string.no_socket_error)
+        buttonConnect.isVisible = true
+    }
+
+    private fun handleReadError(e: IOException) {
+        statusText.text = getString(R.string.error_read_byte, e.message)
+        buttonConnect.isVisible = true
+        MyApp.btSocket = null
+    }
+
+    private fun handleWriteError(e: IOException) {
+        statusText.text = getString(R.string.error_write_byte, e.message)
+        buttonConnect.isVisible = true
+        MyApp.btSocket = null
+    }
+
+    private fun handleConnectionError(e: IOException) {
+        statusText.text = getString(R.string.connection_error, e.message)
+        buttonConnect.isVisible = true
+        MyApp.btSocket = null
+    }
+
+    private val startMoving = object : Runnable {
+        override fun run() {
+            when (content[actionIndex]) {
+                '1' -> writeByte("fw")
+                '2' -> writeByte("bw")
+                '3' -> writeByte("lt")
+                '4' -> writeByte("rt")
+            }
+            // After each command, check readiness
+            checkReady()
+            p = 100 * (actionIndex + 1) / content.length
+            val text = "Now moving $p%"
+            statusText.text = text
+            progressBar.progress = p
+            // Increment action index and post the next action if needed
+            actionIndex++
+            if (actionIndex < content.length) {
+                movingHandler.postDelayed(this, 100)
+            } else {
+                actionIndex = 0
+                writeByte("00")
+                checkReady()
+                buttonStart.isEnabled = true
+                buttonStart.isClickable = true
+                buttonSave.isEnabled = true
+                buttonSave.isClickable = true
+                buttonBack.isEnabled = true
+                buttonBack.isClickable = true
+                recordView.isEnabled = true
+                movingHandler.removeCallbacks(this)
             }
         }
     }
