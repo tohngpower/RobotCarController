@@ -47,20 +47,23 @@ class MyApp : Application() {
                     // Retrieve the BluetoothAdapter from the BluetoothManager
                     val bluetoothAdapter = bluetoothManager.adapter
 
-                    // Now you can use bluetoothAdapter for Bluetooth operations
-                    btSocket = bluetoothAdapter.getRemoteDevice(address).createInsecureRfcommSocketToServiceRecord(
-                        myUUID
-                    ) //start connection
-                    try {
-                        btSocket?.connect()
-                        return if(btSocket!!.isConnected) {
-                            "Connected."
-                        } else {
-                            "Failed to connect."
+                    try {// Now you can use bluetoothAdapter for Bluetooth operations
+                        btSocket = bluetoothAdapter.getRemoteDevice(address).createInsecureRfcommSocketToServiceRecord(
+                            myUUID
+                        )
+                        try {
+                            btSocket?.connect()
+                            return if(btSocket!!.isConnected) {
+                                "Connected."
+                            } else {
+                                "Failed to connect."
+                            }
+                        } catch (e: IOException) {
+                            return context.getString(R.string.connection_error, e.message)
                         }
-                    } catch (e: IOException) {
-                        return context.getString(R.string.connection_error, e.message)
-                    }
+                    } catch (e: Exception) {
+                        return "Please turn on Bluetooth: $e"
+                    } //start connection
                 } else {
                     if(btSocket!!.isConnected) {
                         val text = "Connected."
