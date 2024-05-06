@@ -49,6 +49,7 @@ class RobotController : AppCompatActivity() {
     private lateinit var dos: DataOutputStream
     private lateinit var dis: DataInputStream
     private var busy = false
+    private var permissionDeny = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,11 +79,6 @@ class RobotController : AppCompatActivity() {
         buttonS.isEnabled = false
         bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         myBluetooth = bluetoothManager.adapter
-        if (!myBluetooth.isEnabled) {
-            //Ask to the user turn the bluetooth on
-            val turnBTon = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            enableBluetoothLauncher.launch(turnBTon)
-        }
         pairedDevicesList()
         checkStatus()
 
@@ -244,48 +240,57 @@ class RobotController : AppCompatActivity() {
             btDis.text = getString(R.string.connect)
             listView.isEnabled = true
         } else {
-            statusText.text = when(address) {
-                "00:18:91:D8:17:30" -> {
-                    val text = MyApp.setupBluetoothConnection(this,this,address)
-                    if(text == "Connected.") {
-                        button5.isVisible = true
-                        button20.isVisible = true
-                        buttonO.isVisible = true
-                        buttonLI.isVisible = true
-                        buttonZI.isVisible = true
-                        buttonS.isVisible = true
-                        buttonDM.isVisible = true
-                        autoText.isVisible = true
-                        listView.isEnabled = false
-                        btDis.text = getString(R.string.Disconnect)
-                        writeByte("EMO")
-                        enableButton()
-                        MyApp.address = address
-                    }
+            if(permissionDeny) {
+                finish()
+            } else {
+                statusText.text = when(address) {
+                    "00:18:91:D8:17:30" -> {
+                        val text = MyApp.setupBluetoothConnection(this,this,address)
+                        if(text == "Connected.") {
+                            button5.isVisible = true
+                            button20.isVisible = true
+                            buttonO.isVisible = true
+                            buttonLI.isVisible = true
+                            buttonZI.isVisible = true
+                            buttonS.isVisible = true
+                            buttonDM.isVisible = true
+                            autoText.isVisible = true
+                            listView.isEnabled = false
+                            btDis.text = getString(R.string.Disconnect)
+                            writeByte("EMO")
+                            enableButton()
+                            MyApp.address = address
+                        }
 
-                    text
-                }
-                "00:20:08:00:14:55" -> {
-                    val text = MyApp.setupBluetoothConnection(this,this,address)
-                    if(text == "Connected.") {
-                        button5.isVisible = false
-                        button20.isVisible = false
-                        buttonO.isVisible = false
-                        buttonLI.isVisible = false
-                        buttonZI.isVisible = false
-                        buttonS.isVisible = false
-                        buttonDM.isVisible = false
-                        autoText.isVisible = false
-                        listView.isEnabled = false
-                        btDis.text = getString(R.string.Disconnect)
-                        writeByte("EMO")
-                        enableButton()
-                        MyApp.address = address
+                        text
                     }
+                    "00:20:08:00:14:55" -> {
+                        val text = MyApp.setupBluetoothConnection(this,this,address)
+                        if(text == "Connected.") {
+                            button5.isVisible = false
+                            button20.isVisible = false
+                            buttonO.isVisible = false
+                            buttonLI.isVisible = false
+                            buttonZI.isVisible = false
+                            buttonS.isVisible = false
+                            buttonDM.isVisible = false
+                            autoText.isVisible = false
+                            listView.isEnabled = false
+                            btDis.text = getString(R.string.Disconnect)
+                            writeByte("EMO")
+                            enableButton()
+                            MyApp.address = address
+                        }
 
-                    text
+                        text
+                    }
+                    "" -> {
+                        pairedDevicesList()
+
+                        "Paired new device."
+                    }
+                    else -> "This device is not compatible with this app."
                 }
-                else -> "This device is not compatible with this app."
             }
         }
         btDis.isEnabled = true
@@ -447,7 +452,13 @@ class RobotController : AppCompatActivity() {
                 arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
                 MyApp.REQUEST_CODE_BLUETOOTH_CONNECT
             )
+            return
         } else {
+            if (!myBluetooth.isEnabled) {
+                //Ask to the user turn the bluetooth on
+                val turnBTon = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                enableBluetoothLauncher.launch(turnBTon)
+            }
             myBluetooth.bondedDevices
             val list = ArrayList<String>()
             if (myBluetooth.bondedDevices.isNotEmpty()) {
@@ -469,7 +480,6 @@ class RobotController : AppCompatActivity() {
         val text = if (result.resultCode == RESULT_OK) {
             // Bluetooth was enabled by the user
             // Handle the success case
-            pairedDevicesList()
             "Bluetooth enabled!"
         } else {
             // Bluetooth was not enabled by the user
@@ -486,7 +496,6 @@ class RobotController : AppCompatActivity() {
                 statusText.text = if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // Permission granted
                     // Proceed with Bluetooth operations
-                    pairedDevicesList()
                     "Bluetooth scan success!"
                 } else {
                     // Permission denied
@@ -499,12 +508,12 @@ class RobotController : AppCompatActivity() {
                 statusText.text = if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // Permission granted
                     // Proceed with Bluetooth operations
-                    pairedDevicesList()
                     "Bluetooth connected!"
                 } else {
                     // Permission denied
                     // Handle appropriately
-                    "Bluetooth failed to connect!"
+                    permissionDeny = true
+                    "Please grant Bluetooth permission for this App."
                 }
             }
             // Add other request code handling here if needed
