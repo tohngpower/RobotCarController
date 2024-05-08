@@ -1,13 +1,13 @@
 package com.personal.robot_v4
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.view.MotionEvent
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
 import java.io.*
 
 class ManualMovement : AppCompatActivity() {
@@ -16,7 +16,6 @@ class ManualMovement : AppCompatActivity() {
     private lateinit var buttonLT: ImageButton
     private lateinit var buttonRT: ImageButton
     private lateinit var buttonBack: Button
-    private lateinit var buttonConnect: Button
     private lateinit var statusText: TextView
     private lateinit var dos: DataOutputStream
     private lateinit var dis: DataInputStream
@@ -31,10 +30,10 @@ class ManualMovement : AppCompatActivity() {
         buttonLT = findViewById(R.id.buttonLT)
         buttonRT = findViewById(R.id.buttonRT)
         buttonBack = findViewById(R.id.mn_buttonBack)
-        buttonConnect = findViewById(R.id.mn_buttonConnect)
         statusText = findViewById(R.id.mn_text)
 
-        buttonConnect.isVisible = false
+        checkReady()
+        statusText.text = getString(R.string.ready)
 
         buttonFW.setOnTouchListener { v, event ->
             when(event.action){
@@ -127,12 +126,6 @@ class ManualMovement : AppCompatActivity() {
         buttonBack.setOnClickListener {
             eStop()
         }
-        buttonConnect.setOnClickListener {
-            statusText.text = MyApp.setupBluetoothConnection(this,this, MyApp.address)
-            buttonConnect.isVisible = false
-        }
-        checkReady()
-        statusText.text = getString(R.string.ready)
     }
 
     private fun checkReady() {
@@ -232,24 +225,32 @@ class ManualMovement : AppCompatActivity() {
 
     private fun handleNoSocketError() {
         statusText.text = getString(R.string.no_socket_error)
-        buttonConnect.isVisible = true
+        val i = Intent(this@ManualMovement, RobotController::class.java)
+        startActivity(i)
+        finish()
     }
 
     private fun handleReadError(e: IOException) {
         statusText.text = getString(R.string.error_read_byte, e.message)
-        buttonConnect.isVisible = true
         MyApp.btSocket = null
+        val i = Intent(this@ManualMovement, RobotController::class.java)
+        startActivity(i)
+        finish()
     }
 
     private fun handleWriteError(e: IOException) {
         statusText.text = getString(R.string.error_write_byte, e.message)
-        buttonConnect.isVisible = true
         MyApp.btSocket = null
+        val i = Intent(this@ManualMovement, RobotController::class.java)
+        startActivity(i)
+        finish()
     }
 
     private fun handleConnectionError(e: IOException) {
         statusText.text = getString(R.string.connection_error, e.message)
-        buttonConnect.isVisible = true
         MyApp.btSocket = null
+        val i = Intent(this@ManualMovement, RobotController::class.java)
+        startActivity(i)
+        finish()
     }
 }

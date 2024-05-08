@@ -2,6 +2,7 @@ package com.personal.robot_v4
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -11,7 +12,6 @@ import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
 import java.io.BufferedReader
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -24,7 +24,6 @@ class MoveByRecord : AppCompatActivity() {
     private lateinit var buttonBack: Button
     private lateinit var buttonSave: Button
     private lateinit var buttonStart: Button
-    private lateinit var buttonConnect: Button
     private lateinit var recordView: EditText
     private lateinit var progressBar: ProgressBar
     private lateinit var statusText: TextView
@@ -44,13 +43,14 @@ class MoveByRecord : AppCompatActivity() {
         buttonBack = findViewById(R.id.buttonBack)
         buttonSave = findViewById(R.id.buttonSave)
         buttonStart = findViewById(R.id.buttonStart)
-        buttonConnect = findViewById(R.id.rec_buttonConnect)
         recordView = findViewById(R.id.recordView)
         progressBar = findViewById(R.id.progressBar)
         statusText = findViewById(R.id.statusView)
 
         recordView.movementMethod = ScrollingMovementMethod()
-        buttonConnect.isVisible = false
+        progressBar.progress = p
+        checkReady()
+        readText()
 
         buttonStart.setOnClickListener {
             buttonStart.isEnabled = false
@@ -68,13 +68,6 @@ class MoveByRecord : AppCompatActivity() {
         buttonBack.setOnClickListener {
             eStop()
         }
-        buttonConnect.setOnClickListener {
-            statusText.text = MyApp.setupBluetoothConnection(this,this, MyApp.address)
-            buttonConnect.isVisible = false
-        }
-        progressBar.progress = p
-        checkReady()
-        readText()
     }
 
     @Deprecated("This method has been deprecated in favor of using the\n      {@link OnBackPressedDispatcher} via {@link #getOnBackPressedDispatcher()}.\n      The OnBackPressedDispatcher controls how back button events are dispatched\n      to one or more {@link OnBackPressedCallback} objects.")
@@ -92,7 +85,7 @@ class MoveByRecord : AppCompatActivity() {
     }
 
     private fun checkReady() {
-        val timeoutDuration = 1_000L // in milliseconds
+        val timeoutDuration = 500L // in milliseconds
         val startTime = System.currentTimeMillis()
 
         try {
@@ -244,25 +237,33 @@ class MoveByRecord : AppCompatActivity() {
 
     private fun handleNoSocketError() {
         statusText.text = getString(R.string.no_socket_error)
-        buttonConnect.isVisible = true
+        val i = Intent(this@MoveByRecord, RobotController::class.java)
+        startActivity(i)
+        finish()
     }
 
     private fun handleReadError(e: IOException) {
         statusText.text = getString(R.string.error_read_byte, e.message)
-        buttonConnect.isVisible = true
         MyApp.btSocket = null
+        val i = Intent(this@MoveByRecord, RobotController::class.java)
+        startActivity(i)
+        finish()
     }
 
     private fun handleWriteError(e: IOException) {
         statusText.text = getString(R.string.error_write_byte, e.message)
-        buttonConnect.isVisible = true
         MyApp.btSocket = null
+        val i = Intent(this@MoveByRecord, RobotController::class.java)
+        startActivity(i)
+        finish()
     }
 
     private fun handleConnectionError(e: IOException) {
         statusText.text = getString(R.string.connection_error, e.message)
-        buttonConnect.isVisible = true
         MyApp.btSocket = null
+        val i = Intent(this@MoveByRecord, RobotController::class.java)
+        startActivity(i)
+        finish()
     }
 
     private val startMoving = object : Runnable {

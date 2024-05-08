@@ -1,11 +1,11 @@
 package com.personal.robot_v4
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
@@ -18,7 +18,6 @@ class DistanceMeasurement : AppCompatActivity() {
     private lateinit var buttonN10: Button
     private lateinit var buttonN20: Button
     private lateinit var buttonExit: Button
-    private lateinit var buttonConnect: Button
     private lateinit var buttonL: Button
     private lateinit var buttonR: Button
     private lateinit var textView: TextView
@@ -39,11 +38,10 @@ class DistanceMeasurement : AppCompatActivity() {
         buttonExit = findViewById(R.id.buttonExit)
         buttonL = findViewById(R.id.dm_buttonL)
         buttonR = findViewById(R.id.dm_buttonR)
-        buttonConnect = findViewById(R.id.buttonConnect)
         textView = findViewById(R.id.textView)
         statusText = findViewById(R.id.dm_statusText)
 
-        buttonConnect.isVisible = false
+        distance()
 
         button5.setOnClickListener {
             disableButton()
@@ -88,12 +86,6 @@ class DistanceMeasurement : AppCompatActivity() {
         buttonExit.setOnClickListener {
             eStop() //method to exit
         }
-        buttonConnect.setOnClickListener {
-            statusText.text = MyApp.setupBluetoothConnection(this,this, MyApp.address)
-            buttonConnect.isVisible = false
-            enableButton()
-        }
-        distance()
     }
 
     @Deprecated("This method has been deprecated in favor of using the\n      {@link OnBackPressedDispatcher} via {@link #getOnBackPressedDispatcher()}.\n      The OnBackPressedDispatcher controls how back button events are dispatched\n      to one or more {@link OnBackPressedCallback} objects.")
@@ -147,25 +139,33 @@ class DistanceMeasurement : AppCompatActivity() {
 
     private fun handleNoSocketError() {
         statusText.text = getString(R.string.no_socket_error)
-        buttonConnect.isVisible = true
+        val i = Intent(this@DistanceMeasurement, RobotController::class.java)
+        startActivity(i)
+        finish()
     }
 
     private fun handleReadError(e: IOException) {
         statusText.text = getString(R.string.error_read_byte, e.message)
-        buttonConnect.isVisible = true
         MyApp.btSocket = null
+        val i = Intent(this@DistanceMeasurement, RobotController::class.java)
+        startActivity(i)
+        finish()
     }
 
     private fun handleWriteError(e: IOException) {
         statusText.text = getString(R.string.error_write_byte, e.message)
-        buttonConnect.isVisible = true
         MyApp.btSocket = null
+        val i = Intent(this@DistanceMeasurement, RobotController::class.java)
+        startActivity(i)
+        finish()
     }
 
     private fun handleConnectionError(e: IOException) {
         statusText.text = getString(R.string.connection_error, e.message)
-        buttonConnect.isVisible = true
         MyApp.btSocket = null
+        val i = Intent(this@DistanceMeasurement, RobotController::class.java)
+        startActivity(i)
+        finish()
     }
 
     private fun enableButton() {

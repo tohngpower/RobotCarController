@@ -239,6 +239,7 @@ class RobotController : AppCompatActivity() {
             MyApp.btSocket = null
             btDis.text = getString(R.string.connect)
             listView.isEnabled = true
+            statusText.text = getString(R.string.Disconnect)
         } else {
             if(permissionDeny) {
                 finish()
