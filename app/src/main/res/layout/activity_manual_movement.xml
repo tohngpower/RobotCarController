@@ -71,12 +71,5 @@
             android:layout_height="wrap_content"
             android:text="@string/btnExit"
             android:layout_marginEnd="5dp"/>
-
-        <Button
-            android:id="@+id/mn_buttonConnect"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/connect"
-            android:layout_marginStart="5dp"/>
     </LinearLayout>
 </LinearLayout>
