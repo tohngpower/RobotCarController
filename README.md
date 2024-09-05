@@ -35,7 +35,7 @@
 * Manual movement
 * Moving by data in record.txt
 * Select robot type via mac address
-## Images
+### Images
 ![image 1](/picture/1.jpg "image 1")
 ![image 2](/picture/2.jpg "image 2")
 ![image 3](/picture/3.jpg "image 3")
